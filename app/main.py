@@ -5,7 +5,7 @@ from db.models.language_level import LanguageLevel
 from db.models.word import Word
 from db.models.sentence import Sentence
 import pandas as pd
-from api.v1.endpoints import language_level, sentence, word
+from api.v1 import api_router
 
 app = FastAPI(
     title="Gurulingua FastAPI Backend",
@@ -19,15 +19,8 @@ app = FastAPI(
     allow_credentials=True,
 )
 
-app.include_router(
-    language_level.router, prefix="/language-levels", tags=["language-levels"]
-)
-app.include_router(
-    sentence.router, prefix="/sentences", tags=["sentences"]
-)
-app.include_router(
-    word.router, prefix="/words", tags=["words"]
-)
+app.include_router(api_router, prefix="/api/v1")
+
 
 @app.post("/import-data")
 def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
@@ -57,87 +50,43 @@ def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
         # Boş değerleri temizle
         df = df.dropna(subset=required_columns)
         
-        # Batch işleme için sayaçlar
-        processed_count = 0
-        error_count = 0
         errors = []
-        
-        # Her satırı işle
         for index, row in df.iterrows():
-            try:
-                # LanguageLevel oluştur/kaydet
-                language_level_db = db.query(LanguageLevel).filter(
-                    LanguageLevel.level == row["level"]
-                ).first()
+            language_level_db = db.query(LanguageLevel).filter(LanguageLevel.level == row["level"]).first()
+            if not language_level_db:
+                language_level_db = LanguageLevel(level=row["level"])
+                db.add(language_level_db)
+                db.flush()  # ID'yi almak için flush 
+            
+            sentence_db = db.query(Sentence).filter(Sentence.tr == row["sentence_tr"], Sentence.en == row["sentence_en"]).first()
+            if not sentence_db:
+                sentence_db = Sentence(
+                    tr=row["sentence_tr"], 
+                    en=row["sentence_en"]
+                )
+                db.add(sentence_db)
+                db.flush()  # ID'yi almak için flush kullan
+            
+            word_db = db.query(Word).filter(Word.tr == row["tr"], Word.en == row["en"]).first()
+            if not word_db:
+                word_db = Word(
+                    tr=row["tr"], 
+                    en=row["en"], 
+                    level_id=language_level_db.id, 
+                    sentence_id=sentence_db.id
+                )
+                db.add(word_db)
                 
-                if not language_level_db:
-                    language_level_db = LanguageLevel(level=row["level"])
-                    db.add(language_level_db)
-                    db.flush()  # ID'yi almak için flush kullan
-                
-                # Sentence oluştur/kaydet
-                sentence_db = db.query(Sentence).filter(
-                    Sentence.tr == row["sentence_tr"], 
-                    Sentence.en == row["sentence_en"]
-                ).first()
-                
-                if not sentence_db:
-                    sentence_db = Sentence(
-                        tr=row["sentence_tr"], 
-                        en=row["sentence_en"]
-                    )
-                    db.add(sentence_db)
-                    db.flush()  # ID'yi almak için flush kullan
-                
-                # Word oluştur/kaydet
-                word_db = db.query(Word).filter(
-                    Word.tr == row["tr"], 
-                    Word.en == row["en"]
-                ).first()
-                
-                if not word_db:
-                    word_db = Word(
-                        tr=row["tr"], 
-                        en=row["en"], 
-                        level_id=language_level_db.id, 
-                        sentence_id=sentence_db.id
-                    )
-                    db.add(word_db)
-                
-                processed_count += 1
-                
-                # Her 100 satırda bir commit yap (batch processing)
-                if processed_count % 100 == 0:
-                    db.commit()
-                
-            except Exception as e:
-                error_count += 1
-                error_msg = f"Satır {index + 1} işlenirken hata: {str(e)}"
-                errors.append(error_msg)
-                continue
-        
-        # Kalan değişiklikleri commit et
-        if processed_count > 0:
             db.commit()
+                
         
-        # Sonuç raporu
         result = {
             "message": "Data import işlemi tamamlandı",
             "total_rows": len(df),
-            "processed_count": processed_count,
-            "error_count": error_count,
-            "errors": errors[:10] if errors else []  # Sadece ilk 10 hatayı göster
+            "errors": errors if errors else []
         }
-        
         return result
-        
-    except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=400, detail="Excel dosyası boş")
-    except ValueError as e:
-        if "Excel file format cannot be determined" in str(e):
-            raise HTTPException(status_code=400, detail="Excel dosya formatı tanınamadı. Lütfen .xlsx veya .xls formatında dosya yükleyin.")
-        else:
-            raise HTTPException(status_code=400, detail=f"Excel dosyası okunamadı: {str(e)}")
+
     except Exception as e:
         db.rollback()
         error_msg = f"Import işlemi sırasında beklenmeyen hata: {str(e)}"

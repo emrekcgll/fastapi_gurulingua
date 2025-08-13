@@ -4,7 +4,7 @@ from db.base import Base
 
 
 class Sentence(Base):
-    __tablename__ = "sentences"
+    __tablename__ = "sentence"
 
     id = Column(Integer, primary_key=True, index=True)
     tr = Column(Text)

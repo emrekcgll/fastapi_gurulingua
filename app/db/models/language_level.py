@@ -4,9 +4,9 @@ from db.base import Base
 
 
 class LanguageLevel(Base):
-    __tablename__ = "language_levels"
+    __tablename__ = "language_level"
 
     id = Column(Integer, primary_key=True, index=True)
     level = Column(String(10), unique=True, nullable=False)
 
-    words = relationship("Word", back_populates="level")
+    word = relationship("Word", back_populates="level")

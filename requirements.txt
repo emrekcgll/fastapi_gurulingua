@@ -4,7 +4,11 @@ sqlalchemy
 psycopg2-binary
 pydantic
 pydantic-settings
+pydantic[email]
 alembic
 python-multipart
 pandas
 openpyxl
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt

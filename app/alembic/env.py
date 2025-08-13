@@ -10,7 +10,6 @@ if config.config_file_name is not None:
 
 from db.base import Base
 from core.config import settings
-from db.models import language_level, word, sentence
 
 target_metadata = Base.metadata
 
