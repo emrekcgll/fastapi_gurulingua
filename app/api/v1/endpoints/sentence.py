@@ -17,7 +17,7 @@ def get_sentences(
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all sentences - Requires authentication"""
+    """Tüm cümleleri getirir - Kimlik doğrulama gerekli"""
     return crud.get_all_sentences(db, skip, limit)
 
 
@@ -27,8 +27,8 @@ def get_sentence(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific sentence by ID - Requires authentication"""
+    """ID'ye göre belirli bir cümleyi getirir - Kimlik doğrulama gerekli"""
     sentence = crud.get_sentence(db, sentence_id)
     if not sentence:
-        raise HTTPException(status_code=404, detail="Sentence not found")
+        raise HTTPException(status_code=404, detail="Cümle bulunamadı")
     return sentence

@@ -22,3 +22,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+
+    # Yeni relationships
+    progress = relationship("UserProgress", back_populates="user")
+    word_attempts = relationship("WordAttempt", back_populates="user")

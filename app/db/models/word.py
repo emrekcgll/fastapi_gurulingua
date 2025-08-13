@@ -11,7 +11,10 @@ class Word(Base):
     en = Column(String(100), nullable=False, index=True)
 
     level_id = Column(Integer, ForeignKey("language_level.id"), nullable=False)
-    level = relationship("LanguageLevel", back_populates="word")
+    level = relationship("LanguageLevel", back_populates="words")
 
     sentence_id = Column(Integer, ForeignKey("sentence.id"), unique=True)
     sentence = relationship("Sentence", back_populates="word")
+    
+    # Yeni relationship - kelime denemelerini takip etmek için
+    attempts = relationship("WordAttempt", back_populates="word")

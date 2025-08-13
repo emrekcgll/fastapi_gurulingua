@@ -17,7 +17,7 @@ def get_language_levels(
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all language levels - Requires authentication"""
+    """Tüm dil seviyelerini getirir - Kimlik doğrulama gerekli"""
     return crud.get_all_language_levels(db, skip, limit)
 
 
@@ -27,8 +27,8 @@ def get_language_level(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific language level by ID - Requires authentication"""
+    """ID'ye göre belirli bir dil seviyesini getirir - Kimlik doğrulama gerekli"""
     language_level = crud.get_language_level(db, level_id)
     if not language_level:
-        raise HTTPException(status_code=404, detail="Language level not found")
+        raise HTTPException(status_code=404, detail="Dil seviyesi bulunamadı")
     return language_level

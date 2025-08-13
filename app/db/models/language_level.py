@@ -9,4 +9,6 @@ class LanguageLevel(Base):
     id = Column(Integer, primary_key=True, index=True)
     level = Column(String(10), unique=True, nullable=False)
 
-    word = relationship("Word", back_populates="level")
+    # Sadece bu ikisi kalmalı
+    words = relationship("Word", back_populates="level")
+    user_progress = relationship("UserProgress", back_populates="level")

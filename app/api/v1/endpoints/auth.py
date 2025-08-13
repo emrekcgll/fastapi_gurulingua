@@ -25,7 +25,7 @@ def register(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Bu email adresi zaten kayıtlı"
         )
     
     # Yeni kullanıcı oluştur
@@ -51,7 +51,7 @@ def login(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Hatalı email veya şifre",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -59,7 +59,7 @@ def login(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
+            detail="Pasif kullanıcı"
         )
     
     # Son giriş zamanını güncelle
@@ -101,7 +101,7 @@ def refresh_token(
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token"
+            detail="Geçersiz refresh token"
         )
     
     user_id = payload.get("sub")
@@ -109,7 +109,7 @@ def refresh_token(
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid user"
+            detail="Geçersiz kullanıcı"
         )
     
     # Yeni token'ları oluştur
@@ -174,7 +174,7 @@ def change_password(
     if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect current password"
+            detail="Mevcut şifre hatalı"
         )
     
     # Yeni şifreyi hashle ve güncelle
@@ -182,4 +182,4 @@ def change_password(
     from crud.user import update_user
     update_user(db=db, user_id=current_user.id, hashed_password=new_hashed_password)
     
-    return {"message": "Password changed successfully"}
+    return {"message": "Şifre başarıyla değiştirildi"}

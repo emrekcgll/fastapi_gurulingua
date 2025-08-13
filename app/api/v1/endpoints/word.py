@@ -17,7 +17,7 @@ def get_words(
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all words - Requires authentication"""
+    """Tüm kelimeleri getirir - Kimlik doğrulama gerekli"""
     return crud.get_all_words(db, skip, limit)
 
 
@@ -27,10 +27,10 @@ def get_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific word by ID - Requires authentication"""
+    """ID'ye göre belirli bir kelimeyi getirir - Kimlik doğrulama gerekli"""
     word = crud.get_word(db, word_id)
     if not word:
-        raise HTTPException(status_code=404, detail="Word not found")
+        raise HTTPException(status_code=404, detail="Kelime bulunamadı")
     return word
 
 
@@ -42,5 +42,5 @@ def get_words_by_level(
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
-    """Get words by language level - Requires authentication"""
+    """Dil seviyesine göre kelimeleri getirir - Kimlik doğrulama gerekli"""
     return crud.get_words_by_level(db, level_id, skip, limit)

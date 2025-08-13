@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, File, UploadFile, HTTPException
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from db.session import get_db
 from db.models.language_level import LanguageLevel
@@ -16,10 +17,21 @@ app = FastAPI(
     redoc_url="/api/v1/redoc",
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origins=["*"],
     allow_credentials=True,
 )
 
+# Static dosyaları serve et
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get("/")
+async def root():
+    """Ana sayfa - HTML dosyasını serve et"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/index.html")
 
 
 @app.post("/import-data")
@@ -81,7 +93,7 @@ def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
                 
         
         result = {
-            "message": "Data import işlemi tamamlandı",
+            "message": "Veri import işlemi tamamlandı",
             "total_rows": len(df),
             "errors": errors if errors else []
         }
