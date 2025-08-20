@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from db.base import Base
 
@@ -7,14 +7,14 @@ class Word(Base):
     __tablename__ = "word"
 
     id = Column(Integer, primary_key=True, index=True)
-    tr = Column(String(100), nullable=False, index=True)
-    en = Column(String(100), nullable=False, index=True)
+    tr = Column(String(100), nullable=False)
+    en = Column(String(100), nullable=False)
 
     level_id = Column(Integer, ForeignKey("language_level.id"), nullable=False)
     level = relationship("LanguageLevel", back_populates="words")
 
-    sentence_id = Column(Integer, ForeignKey("sentence.id"), unique=True)
-    sentence = relationship("Sentence", back_populates="word")
+    # Sadece aktif/pasif durumu
+    is_active = Column(Boolean, default=True)  # Kelime aktif mi?
     
-    # Yeni relationship - kelime denemelerini takip etmek için
-    attempts = relationship("WordAttempt", back_populates="word")
+    # Relationships
+    word_attempts = relationship("WordAttempt", back_populates="word")

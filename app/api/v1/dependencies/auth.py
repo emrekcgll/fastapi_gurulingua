@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from core.security import verify_token
 from api.v1.dependencies.database import get_db
-from db.models.user import User
+from db.models.user import User, UserRole
 from crud.user import get_user_by_id
 
 # HTTP Bearer token scheme
@@ -65,7 +65,7 @@ def get_current_superadmin(current_user: User = Depends(get_current_user)) -> Us
     """
     Mevcut superadmin kullanıcıyı getirir
     """
-    if current_user.role != "superadmin":
+    if current_user.role != UserRole.SUPERADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"

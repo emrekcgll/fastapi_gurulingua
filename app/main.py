@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from db.session import get_db
 from db.models.language_level import LanguageLevel
 from db.models.word import Word
-from db.models.sentence import Sentence
 import pandas as pd
 from api.v1 import api_router
 

@@ -6,7 +6,7 @@ from api.v1.dependencies.database import get_db
 from api.v1.dependencies.auth import get_current_user
 from core.security import create_access_token, create_refresh_token
 from core.config import settings
-from crud.user import authenticate_user, create_user, update_user_last_login
+from crud.user import authenticate_user, create_user, update_user_last_login, get_user_by_email
 from schemas.auth import UserLogin, UserRegister, Token, UserResponse, UserUpdate, PasswordChange
 from db.models.user import User
 
@@ -21,7 +21,7 @@ def register(
     Yeni kullanıcı kaydı
     """
     # Email zaten var mı kontrol et
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    existing_user = get_user_by_email(db, user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -70,7 +70,7 @@ def login(
     refresh_token_expires = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
     
     access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role},
+        data={"sub": str(user.id), "email": user.email, "role": user.role.value},
         expires_delta=access_token_expires
     )
     
@@ -117,7 +117,7 @@ def refresh_token(
     new_refresh_token_expires = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
     
     new_access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role},
+        data={"sub": str(user.id), "email": user.email, "role": user.role.value},
         expires_delta=access_token_expires
     )
     
