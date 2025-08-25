@@ -7,8 +7,9 @@ from api.v1.dependencies.auth import get_current_user
 from core.security import create_access_token, create_refresh_token
 from core.config import settings
 from crud.user import authenticate_user, create_user, update_user_last_login, get_user_by_email
-from schemas.auth import UserLogin, UserRegister, Token, UserResponse, UserUpdate, PasswordChange
+from schemas.auth import UserLogin, UserRegister, Token, UserResponse, UserUpdate, PasswordChange, GoogleLogin
 from db.models.user import User
+from core.google_auth import GoogleAuthService
 
 router = APIRouter()
 
@@ -183,3 +184,69 @@ def change_password(
     update_user(db=db, user_id=current_user.id, hashed_password=new_hashed_password)
     
     return {"message": "Şifre başarıyla değiştirildi"}
+
+@router.post("/google/login", response_model=Token)
+def google_login(
+    google_data: GoogleLogin,
+    db: Session = Depends(get_db)
+):
+    """
+    Google ID token ile giriş yapma (Android için)
+    Hem giriş hem kayıt işlemini yapar
+    """
+    try:
+        # Google ID token'ını doğrula
+        google_user_info = GoogleAuthService.verify_google_token(google_data.id_token)
+        
+        # Kullanıcı zaten var mı kontrol et
+        user = get_user_by_email(db, google_user_info['email'])
+        is_new_user = False
+        
+        if not user:
+            # Yeni kullanıcı oluştur
+            user = create_user(
+                db=db,
+                email=google_user_info['email'],
+                password=None,  # Google kullanıcıları için şifre yok
+                name=google_user_info['name']
+            )
+            is_new_user = True
+        else:
+            # Mevcut kullanıcının son giriş zamanını güncelle
+            update_user_last_login(db, user.id)
+        
+        # Token'ları oluştur
+        access_token_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token_expires = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email, "role": user.role.value},
+            expires_delta=access_token_expires
+        )
+        
+        refresh_token = create_refresh_token(
+            data={"sub": str(user.id), "email": user.email},
+            expires_delta=refresh_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "is_new_user": is_new_user,
+            "user_id": str(user.id),
+            "email": user.email,
+            "name": user.name
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Google token doğrulama hatası: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Giriş hatası: {str(e)}"
+        )

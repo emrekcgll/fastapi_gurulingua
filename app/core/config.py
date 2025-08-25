@@ -12,6 +12,14 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int
 
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_PROJECT_ID: str
+    GOOGLE_AUTH_URI: str
+    GOOGLE_TOKEN_URI: str
+    GOOGLE_CERT_URL: str
+    GOOGLE_TOKENINFO_URL: str
+    GOOGLE_USERINFO_URL: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

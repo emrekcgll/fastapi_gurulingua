@@ -43,3 +43,6 @@ class UserUpdate(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
+
+class GoogleLogin(BaseModel):
+    id_token: str

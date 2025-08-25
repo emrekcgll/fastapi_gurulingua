@@ -12,3 +12,7 @@ openpyxl
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+requests
