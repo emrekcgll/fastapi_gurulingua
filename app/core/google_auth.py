@@ -21,7 +21,7 @@ class GoogleAuthService:
         try:
             # Google'ın token info endpoint'ini kullan (config'den)
             response = requests.get(
-                settings.GOOGLE_TOKENINFO_URL,  # Artık config'den
+                settings.GOOGLE_TOKENINFO_URL,
                 params={'id_token': id_token}
             )
             
@@ -67,7 +67,7 @@ class GoogleAuthService:
             headers = {'Authorization': f'Bearer {access_token}'}
             # Google userinfo endpoint'i (config'den)
             response = requests.get(
-                settings.GOOGLE_USERINFO_URL,  # Artık config'den
+                settings.GOOGLE_USERINFO_URL,
                 headers=headers
             )
             
@@ -84,3 +84,19 @@ class GoogleAuthService:
                 raise ValueError('Failed to get user info from Google')
         except Exception as e:
             raise ValueError(f'Error getting user info: {str(e)}')
+
+    @staticmethod
+    def get_oauth_config() -> dict:
+        """
+        Google OAuth yapılandırmasını döner
+        """
+        return {
+            'client_id': settings.GOOGLE_CLIENT_ID,
+            'project_id': settings.GOOGLE_PROJECT_ID,
+            'auth_uri': settings.GOOGLE_AUTH_URI,
+            'token_uri': settings.GOOGLE_TOKEN_URI,
+            'auth_provider_x509_cert_url': settings.GOOGLE_CERT_URL,
+            'client_secret': settings.GOOGLE_CLIENT_SECRET,
+            'redirect_uris': [settings.GOOGLE_REDIRECT_URIS],
+            'javascript_origins': [settings.GOOGLE_JAVASCRIPT_ORIGINS]
+        }

@@ -12,11 +12,17 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int
 
+    # Google OAuth Configuration
     GOOGLE_CLIENT_ID: str
     GOOGLE_PROJECT_ID: str
     GOOGLE_AUTH_URI: str
     GOOGLE_TOKEN_URI: str
     GOOGLE_CERT_URL: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URIS: str
+    GOOGLE_JAVASCRIPT_ORIGINS: str
+    
+    # Google API Endpoints
     GOOGLE_TOKENINFO_URL: str
     GOOGLE_USERINFO_URL: str
 
