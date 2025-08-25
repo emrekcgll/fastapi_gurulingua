@@ -233,11 +233,7 @@ def google_login(
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
-            "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            "is_new_user": is_new_user,
-            "user_id": str(user.id),
-            "email": user.email,
-            "name": user.name
+            "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
         }
         
     except ValueError as e:
