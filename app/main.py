@@ -1,9 +1,4 @@
-from fastapi import FastAPI, Depends, File, UploadFile, HTTPException
-from sqlalchemy.orm import Session
-from db.session import get_db
-from db.models.language_level import LanguageLevel
-from db.models.word import Word
-import pandas as pd
+from fastapi import FastAPI
 from api.v1 import api_router
 
 app = FastAPI(
@@ -22,73 +17,27 @@ app = FastAPI(
 app.include_router(api_router, prefix="/api/v1")
 
 
+from db.session import get_db
+from fastapi import Depends, UploadFile, File
+from sqlalchemy.orm import Session
+import pandas as pd
+from crud.language_level import get_level_by_name, create_level
+from crud.word import create_word, get_word_by_word_tr
 
 @app.post("/import-data")
 def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
-    """
-    Excel dosyasından veri import etme fonksiyonu
-    Gerekli kolonlar: level, sentence_tr, sentence_en, tr, en
-    """
-    
-    # Dosya tipi kontrolü
-    if not file.filename.lower().endswith(('.xlsx', '.xls')):
-        raise HTTPException(status_code=400, detail="Sadece Excel dosyaları (.xlsx, .xls) kabul edilir")
-    
-    try:
-        # Excel dosyasını oku
-        df = pd.read_excel(file.file)
-        
-        # Gerekli kolonları kontrol et
-        required_columns = ["level", "sentence_tr", "sentence_en", "tr", "en"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        
-        if missing_columns:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Excel dosyasında gerekli kolonlar eksik: {missing_columns}"
-            )
-        
-        # Boş değerleri temizle
-        df = df.dropna(subset=required_columns)
-        
-        errors = []
-        for index, row in df.iterrows():
-            language_level_db = db.query(LanguageLevel).filter(LanguageLevel.level == row["level"]).first()
-            if not language_level_db:
-                language_level_db = LanguageLevel(level=row["level"])
-                db.add(language_level_db)
-                db.flush()  # ID'yi almak için flush 
-            
-            sentence_db = db.query(Sentence).filter(Sentence.tr == row["sentence_tr"], Sentence.en == row["sentence_en"]).first()
-            if not sentence_db:
-                sentence_db = Sentence(
-                    tr=row["sentence_tr"], 
-                    en=row["sentence_en"]
-                )
-                db.add(sentence_db)
-                db.flush()  # ID'yi almak için flush kullan
-            
-            word_db = db.query(Word).filter(Word.tr == row["tr"], Word.en == row["en"]).first()
-            if not word_db:
-                word_db = Word(
-                    tr=row["tr"], 
-                    en=row["en"], 
-                    level_id=language_level_db.id, 
-                    sentence_id=sentence_db.id
-                )
-                db.add(word_db)
-                
-            db.commit()
-                
-        
-        result = {
-            "message": "Veri import işlemi tamamlandı",
-            "total_rows": len(df),
-            "errors": errors if errors else []
-        }
-        return result
+    df = pd.read_excel(file.file)
+    for index, row in df.iterrows():
+        word_tr = row['tr']
+        word_en = row['en']
+        level = row['level']
 
-    except Exception as e:
-        db.rollback()
-        error_msg = f"Import işlemi sırasında beklenmeyen hata: {str(e)}"
-        raise HTTPException(status_code=500, detail=error_msg)
+        level_id = get_level_by_name(db, level)
+        if not level_id:
+            level_id = create_level(db, level)
+
+        word = get_word_by_word_tr(db, word_tr)
+        if not word:
+            word = create_word(db, word_tr, word_en, level_id)
+
+    return {"message": "Data imported successfully"}

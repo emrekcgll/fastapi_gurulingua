@@ -17,7 +17,7 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
 def create_user(
     db: Session,
     email: str,
-    password: str,
+    password: str = None,
     name: str = None,
     provider: UserProvider = UserProvider.LOCAL,
     role: UserRole = UserRole.USER,
@@ -34,6 +34,20 @@ def create_user(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Kullanıcı oluşturulduktan sonra A1 seviyesi için progress kaydı oluştur
+    try:
+        from crud.user_progress import create_user_progress
+        from db.models.language_level import LanguageLevel
+        
+        # A1 seviyesini bul
+        a1_level = db.query(LanguageLevel).filter(LanguageLevel.name == "A1").first()
+        if a1_level:
+            create_user_progress(db, db_user.id, a1_level.id)
+    except Exception as e:
+        # Progress oluşturulamazsa hata verme, sadece log
+        print(f"Warning: Could not create progress for user {db_user.id}: {e}")
+    
     return db_user
 
 

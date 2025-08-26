@@ -29,6 +29,11 @@ def create_user_progress(
 ) -> UserProgress:
     """Kullanıcı için yeni seviye ilerlemesi oluşturur"""
     
+    # A1 seviyesi için özel durum - her zaman açık
+    from db.models.language_level import LanguageLevel
+    level = db.query(LanguageLevel).filter(LanguageLevel.id == level_id).first()
+    is_unlocked = level.name == "A1" if level else False
+    
     user_progress = UserProgress(
         user_id=user_id,
         level_id=level_id,
@@ -36,7 +41,7 @@ def create_user_progress(
         correct_attempts=0,
         total_attempts=0,
         completion_percentage=0.0,
-        is_unlocked=False,
+        is_unlocked=is_unlocked,
         required_percentage=70.0
     )
     
@@ -93,6 +98,32 @@ def update_user_progress_after_attempt(
     
     # Seviye tamamlanma durumunu kontrol et
     user_progress.is_completed = user_progress.completion_percentage >= 100.0
+    
+    # Eğer mevcut seviye tamamlandıysa, bir sonraki seviyeyi aç
+    if user_progress.is_completed:
+        from db.models.language_level import LanguageLevel
+        
+        # Bir sonraki seviyeyi bul
+        current_level = db.query(LanguageLevel).filter(LanguageLevel.id == word.level_id).first()
+        if current_level:
+            # Seviye sıralaması: A1 -> A2 -> B1 -> B2 -> C1 -> C2
+            level_order = ["A1", "A2", "B1", "B2", "C1", "C2"]
+            try:
+                current_index = level_order.index(current_level.name.value)
+                if current_index < len(level_order) - 1:
+                    next_level_name = level_order[current_index + 1]
+                    next_level = db.query(LanguageLevel).filter(LanguageLevel.name == next_level_name).first()
+                    
+                    if next_level:
+                        # Bir sonraki seviye için progress kaydı oluştur veya güncelle
+                        next_level_progress = get_user_progress_by_level(db, user_id, next_level.id)
+                        if not next_level_progress:
+                            next_level_progress = create_user_progress(db, user_id, next_level.id)
+                        
+                        # Bir sonraki seviyeyi aç
+                        next_level_progress.is_unlocked = True
+            except (ValueError, IndexError):
+                pass  # Son seviyede ise bir şey yapma
     
     db.commit()
 
@@ -183,3 +214,46 @@ def unlock_user_level(
         return True
     
     return False
+
+
+def get_level_completion_stats(db: Session, level_name: str) -> dict:
+    """Belirli seviye için genel tamamlanma istatistiklerini getirir"""
+    from db.models.language_level import LanguageLevel
+    
+    # Seviyeyi bul
+    level = db.query(LanguageLevel).filter(LanguageLevel.name == level_name).first()
+    if not level:
+        return {}
+    
+    # Bu seviyedeki tüm kullanıcı ilerlemelerini getir
+    all_progress = db.query(UserProgress).filter(UserProgress.level_id == level.id).all()
+    
+    if not all_progress:
+        return {
+            "total_users": 0,
+            "unlocked_users": 0,
+            "completed_users": 0,
+            "average_completion": 0.0,
+            "average_attempts": 0.0
+        }
+    
+    total_users = len(all_progress)
+    unlocked_users = sum(1 for p in all_progress if p.is_unlocked)
+    completed_users = sum(1 for p in all_progress if p.is_completed)
+    
+    total_completion = sum(p.completion_percentage for p in all_progress)
+    total_attempts = sum(p.total_attempts for p in all_progress)
+    
+    average_completion = total_completion / total_users if total_users > 0 else 0
+    average_attempts = total_attempts / total_users if total_users > 0 else 0
+    
+    return {
+        "total_users": total_users,
+        "unlocked_users": unlocked_users,
+        "completed_users": completed_users,
+        "locked_users": total_users - unlocked_users,
+        "average_completion": round(average_completion, 2),
+        "average_attempts": round(average_attempts, 2),
+        "unlock_rate": round((unlocked_users / total_users * 100), 2) if total_users > 0 else 0,
+        "completion_rate": round((completed_users / total_users * 100), 2) if total_users > 0 else 0
+    }
