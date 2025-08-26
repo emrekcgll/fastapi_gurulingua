@@ -32,9 +32,9 @@ def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
         word_en = row['en']
         level = row['level']
 
-        level_id = get_level_by_name(db, level)
+        level_id = get_level_by_name(db, level).id
         if not level_id:
-            level_id = create_level(db, level)
+            level_id = create_level(db, level).id
 
         word = get_word_by_word_tr(db, word_tr)
         if not word:
