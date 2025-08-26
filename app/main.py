@@ -32,12 +32,12 @@ def import_data(db: Session = Depends(get_db), file: UploadFile = File(...)):
         word_en = row['en']
         level = row['level']
 
-        level_id = get_level_by_name(db, level).id
-        if not level_id:
-            level_id = create_level(db, level).id
+        level_obj = get_level_by_name(db, level)
+        if not level_obj:
+            level_obj = create_level(db, level)
 
         word = get_word_by_word_tr(db, word_tr)
         if not word:
-            word = create_word(db, word_tr, word_en, level_id)
+            word = create_word(db, word_tr, word_en, level_obj.id)
 
     return {"message": "Data imported successfully"}
