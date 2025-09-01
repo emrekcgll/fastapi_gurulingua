@@ -1,19 +1,14 @@
 from fastapi import APIRouter
-from api.v1.endpoints import auth, words, word_attempts, language_levels, user_progress
+from api.v1.endpoints import test, auth, user
 
 api_router = APIRouter()
+
+# Test endpoints
+api_router.include_router(test.router, prefix="/test", tags=["test"])
 
 # Auth endpoints
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 
-# Word endpoints
-api_router.include_router(words.router, prefix="/words", tags=["words"])
+# User endpoints
+api_router.include_router(user.router, prefix="/user", tags=["user"])
 
-# Word attempt endpoints
-api_router.include_router(word_attempts.router, prefix="/words", tags=["word_attempts"])
-
-# Language level endpoints
-api_router.include_router(language_levels.router, prefix="/language-levels", tags=["language_levels"])
-
-# User progress endpoints
-api_router.include_router(user_progress.router, prefix="/user-progress", tags=["user_progress"])

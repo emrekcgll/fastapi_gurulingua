@@ -2,22 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
-from api.v1.dependencies.database import get_db
-from api.v1.dependencies.auth import get_current_user
+from db.session import get_db
 from core.security import create_access_token, create_refresh_token
 from core.config import settings
 from crud.user import authenticate_user, create_user, update_user_last_login, get_user_by_email
-from schemas.auth import UserLogin, UserRegister, Token, UserResponse, UserUpdate, PasswordChange, GoogleLogin
+from schemas.auth import UserRegister, Token, UserResponse, GoogleLogin
 from db.models.user import User
 from core.google_auth import GoogleAuthService
 
 router = APIRouter()
 
 @router.post("/register", response_model=UserResponse)
-def register(
-    user_data: UserRegister,
-    db: Session = Depends(get_db)
-):
+def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """
     Yeni kullanıcı kaydı
     """
@@ -40,10 +36,7 @@ def register(
     return user
 
 @router.post("/login", response_model=Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Kullanıcı girişi ve token oluşturma
     """
@@ -88,10 +81,7 @@ def login(
     }
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(
-    refresh_token: str,
-    db: Session = Depends(get_db)
-):
+def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     """
     Refresh token ile yeni access token oluşturma
     """
@@ -134,62 +124,8 @@ def refresh_token(
         "expires_in": settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
 
-@router.get("/me", response_model=UserResponse)
-def get_current_user_info(current_user: User = Depends(get_current_user)):
-    """
-    Mevcut kullanıcı bilgilerini getirir
-    """
-    return current_user
-
-@router.put("/me", response_model=UserResponse)
-def update_current_user(
-    user_data: UserUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Mevcut kullanıcı bilgilerini günceller
-    """
-    from crud.user import update_user
-    
-    updated_user = update_user(
-        db=db,
-        user_id=current_user.id,
-        **user_data.dict(exclude_unset=True)
-    )
-    
-    return updated_user
-
-@router.post("/change-password")
-def change_password(
-    password_data: PasswordChange,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Kullanıcı şifresini değiştirir
-    """
-    from core.security import verify_password, get_password_hash
-    
-    # Mevcut şifreyi doğrula
-    if not verify_password(password_data.current_password, current_user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Mevcut şifre hatalı"
-        )
-    
-    # Yeni şifreyi hashle ve güncelle
-    new_hashed_password = get_password_hash(password_data.new_password)
-    from crud.user import update_user
-    update_user(db=db, user_id=current_user.id, hashed_password=new_hashed_password)
-    
-    return {"message": "Şifre başarıyla değiştirildi"}
-
 @router.post("/google/login", response_model=Token)
-def google_login(
-    google_data: GoogleLogin,
-    db: Session = Depends(get_db)
-):
+def google_login(google_data: GoogleLogin, db: Session = Depends(get_db)):
     """
     Google ID token ile giriş yapma (Android için)
     Hem giriş hem kayıt işlemini yapar

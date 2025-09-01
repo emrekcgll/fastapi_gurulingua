@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     GOOGLE_TOKENINFO_URL: str
     GOOGLE_USERINFO_URL: str
 
+    # Test Key
+    TEST_KEY: str
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -10,6 +10,7 @@ if config.config_file_name is not None:
 
 from db.base import Base
 from core.config import settings
+from db.models import __init__
 
 target_metadata = Base.metadata
 

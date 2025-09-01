@@ -1,28 +1,27 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from datetime import datetime
+
 from db.base import Base
 
 
 class WordAttempt(Base):
-    __tablename__ = "word_attempt"
+    __tablename__ = "word_attempts"
 
     id = Column(Integer, primary_key=True, index=True)
-
-    # Kelime bilgileri
-    word_id = Column(Integer, ForeignKey("word.id"), nullable=False)
-    word = relationship("Word", back_populates="word_attempts", foreign_keys=[word_id])
-
-    # Kullanıcı bilgileri
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    user = relationship("User", back_populates="word_attempts")
-
-    # Oyun sonucu
-    is_correct = Column(Boolean, nullable=False)
-
+    
+    # Foreign Keys
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    word_id = Column(Integer, ForeignKey("words.id"), nullable=False)
+    
+    # Attempt details
+    user_answer = Column(String(255), nullable=False)  # User's answer
+    is_correct = Column(Boolean, nullable=False)  # Whether the answer was correct
+    response_time = Column(Integer, nullable=True)  # Response time in milliseconds
+    
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # UserProgress ile ilişki
-    user_progress_id = Column(Integer, ForeignKey("user_progress.id"), nullable=True)
-    user_progress = relationship("UserProgress", back_populates="word_attempts")
+    attempted_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="word_attempts")
+    word = relationship("Word", back_populates="attempts")
