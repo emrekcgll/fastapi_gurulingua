@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1.endpoints import test, auth, user
+from api.v1.endpoints import test, auth, user, language
 
 api_router = APIRouter()
 
@@ -12,3 +12,5 @@ api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 # User endpoints
 api_router.include_router(user.router, prefix="/user", tags=["user"])
 
+# Language endpoints
+api_router.include_router(language.router, prefix="/language", tags=["language"])
